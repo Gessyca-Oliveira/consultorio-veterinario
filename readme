@@ -1,0 +1,45 @@
+# 🐾 Sistema de Consultório Veterinário
+
+Sistema web para gerenciamento de clínicas veterinárias, incluindo cadastro de pacientes, profissionais e consultas.
+
+---
+
+## 🚀 Tecnologias
+
+* Frontend: React + Material UI
+* Backend: FastAPI (Python)
+* Banco de Dados: SQLite (dev) / PostgreSQL (produção)
+
+---
+
+## 📂 Estrutura
+
+```
+backend/   # API REST
+frontend/  # Interface do usuário
+```
+
+---
+
+## ⚙️ Como rodar o projeto
+
+### 🔙 Backend
+
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # Linux/macOS
+venv\Scripts\activate     # Windows
+
+pip install -r requirements.txt
+uvicorn main:app --reload
+```
+
+---
+
+## 📌 Funcionalidades
+
+* Cadastro de pacientes
+* Cadastro de profissionais
+* Agendamento de consultas
+* Histórico clínico
