@@ -1,493 +1,418 @@
-```md
-# 🐾 Trabalho 1 - Sistemas Distribuídos (QXD0043)
-**Universidade Federal do Ceará – Campus Quixadá**  
-**Professor:** Rafael Braga  
-**Disciplina:** Sistemas Distribuídos (Capítulo 4 - Comunicação entre Processos)  
-**Tema:** Sistema Clínica Veterinária  
+#  Sistema Clínica Veterinária — Trabalho 1 (Sistemas Distribuídos)
 
-Este projeto implementa todas as questões do Trabalho 1 utilizando **Python**, aplicando conceitos de:
-- Comunicação Cliente-Servidor via **Sockets TCP**
-- Comunicação Multicast via **Sockets UDP**
-- Manipulação de **Streams (InputStream/OutputStream)**
-- Serialização e representação externa de dados via **JSON**
-- Servidor **multi-thread**
+ **Universidade Federal do Ceará — Campus Quixadá** 
+ **Disciplina:** Sistemas Distribuídos 
+ **Docente:** Antônio Rafael Braga 
+ **Discentes:** Alfredo Borges do Nascimento Neto | Gessyca de Oliveira Cunha
+ **Trabalho 1:** Comunicação entre processos
+ **Tema:** **Clínica Veterinária** 
+ **Linguagem:** **Python 3** 
+ **Tecnologias:** TCP Sockets, UDP Multicast, Streams, JSON, Multi-thread 
 
 ---
 
-# 📌 Estrutura do Projeto
+#  Visão Geral do Projeto
 
-A estrutura recomendada do projeto é:
+Este projeto implementa um sistema distribuído baseado em uma **Clínica Veterinária**, seguindo as questões do Trabalho 1.
 
-```
+O objetivo principal é demonstrar conceitos de:
 
-src/
-│
-├── pojos/
-│   ├── animal.py
-│   ├── cachorro.py
-│   ├── gato.py
-│   ├── coelho.py
-│   ├── estoque.py
-│   ├── consulta.py
-│   ├── servico_consulta.py
-│   └── servico_estoque.py
-│
-├── streams/
-│   ├── animal_output_stream.py
-│   ├── animal_input_stream.py
-│   ├── test_stdout_q2.py
-│   ├── test_file_q2.py
-│   ├── server_q2_tcp.py
-│   ├── client_q2_tcp.py
-│   ├── test_file_q3.py
-│   ├── test_stdin_q3.py
-│   ├── server_q3_tcp.py
-│   └── client_q3_tcp.py
-│
-├── questao4/
-│   ├── server_tcp.py
-│   └── client_tcp.py
-│
-├── questao5/
-│   ├── server.py
-│   ├── client_eleitor.py
-│   ├── client_admin.py
-│   └── multicast_listener.py
-│
-└── utils/
-└── serializer.py
-
-````
+ Comunicação **TCP (unicast)** cliente-servidor 
+ Comunicação **UDP Multicast** (mensagens em grupo) 
+ Criação de streams customizados (InputStream/OutputStream) 
+ Serialização de dados (JSON e bytes) 
+ Servidor concorrente com **multi-thread** 
 
 ---
 
-# ⚙️ Requisitos
+#  Pré-requisitos
 
-- Python 3.8+
-- Linux recomendado (Ubuntu/Debian/Fedora) por causa do Multicast
-
-Verifique se o Python está instalado:
+- Python 3.8+ (recomendado 3.10+)
 
 ```bash
 python3 --version
-````
+```
 
 ---
 
-# ▶️ Como Executar
+#  Como Rodar o Projeto
 
-Entre na pasta `src/` antes de rodar qualquer coisa:
+ **IMPORTANTE:** 
+Sempre execute os comandos a partir da raiz do projeto:
+
+```
+~/Documents/SD/consultorio-veterinario-back
+```
+
+E sempre utilize:
+
+ `PYTHONPATH=src`
+
+Isso faz o Python reconhecer `src/` como raiz dos imports.
+
+---
+
+#  Portas Utilizadas no Projeto
+
+| Questão | Tipo | Porta |
+|--------|------|-------|
+| Q2 TCP | TCP | 9001 |
+| Q3 TCP | TCP | 9002 |
+| Q4 TCP | TCP | 9010 |
+| Q5 TCP | TCP | 9020 |
+| Q5 Multicast | UDP | 5007 |
+| Q5 Multicast Group | IP | 224.1.1.1 |
+
+---
+
+#  Como Liberar Todas as Portas de Uma Vez
+
+Se você receber erro de porta ocupada (**Address already in use**), rode:
 
 ```bash
-cd src
+sudo fuser -k 9001/tcp 9002/tcp 9010/tcp 9020/tcp 5007/udp
 ```
 
----
-
-# ✅ QUESTÃO 1 — POJOs + Serviços
-
-## 🎯 Objetivo
-
-Criar classes do tipo POJO (objetos simples) que representam o sistema de uma clínica veterinária.
-
-### Superclasse
-
-* `Animal`
-
-### Subclasses
-
-* `Cachorro`
-* `Gato`
-* `Coelho`
-
-### Agregação
-
-* `Estoque` (armazenamento de produtos)
-
-### Interface/Serviço
-
-* `Consulta` (representa consultas)
-* `ServicoConsulta` (modelo para criar e listar consultas)
-* `ServicoEstoque` (modelo para gerenciar estoque)
-
-📌 Esses arquivos são utilizados como base para as outras questões.
+ Isso mata todos os processos presos nessas portas.
 
 ---
 
-# ✅ QUESTÃO 2 — OutputStream (Envio de objetos em fluxo de bytes)
+#  Questão 1 — POJOs e Modelos (Classes do Sistema)
 
-## 🎯 Objetivo
+##  Objetivo
+Criar classes que representam o sistema de uma clínica veterinária.
 
-Criar uma subclasse de OutputStream chamada:
+ Implementado:
 
-* `AnimalOutputStream`
+-  Superclasse: `Animal`
+-  Subclasse: `Cachorro`
+-  Subclasse: `Gato`
+-  Subclasse: `Coelho`
+-  Agregação: `Estoque`
+-  Interface/Entidade: `Consulta`
+-  Serviços:
+  - `ServicoConsulta`
+  - `ServicoEstoque`
 
-Essa classe envia um **array de objetos** (Cachorro/Gato/Coelho) em formato binário.
-
-### Como funciona o protocolo de envio?
-
-Para cada animal, o stream envia:
-
-* tipo do animal (ex: Cachorro)
-* nome
-* idade
-* atributo extra (raça/cor/peso)
-
-Antes de cada campo, o sistema envia o **tamanho em bytes** daquele campo.
-
-Isso garante que o receptor consiga reconstruir corretamente os dados.
+ Essa questão não tem execução direta. 
+Ela é a base para o restante do projeto.
 
 ---
 
-## 🧪 Testes da Questão 2
+#  Questão 2 — OutputStream (Envio binário de objetos)
 
-### 1) Teste enviando para stdout (saída padrão)
+##  Objetivo
+Criar um stream de saída chamado:
+
+ `AnimalOutputStream`
+
+Ele envia um **array de objetos Animal** (Cachorro/Gato/Coelho) como bytes.
+
+---
+
+##  Como o protocolo funciona
+
+O stream envia:
+
+1.  quantidade de objetos
+2. Para cada animal:
+   - tamanho do campo em bytes
+   - conteúdo do campo em bytes
+
+Campos enviados:
+- tipo do animal
+- nome
+- idade
+- atributo extra (raça/cor/peso)
+
+ Isso permite reconstruir o objeto depois.
+
+---
+
+## Rodar Questão 2
+
+###  Teste 1: stdout (imprime bytes no terminal)
 
 ```bash
-python3 streams/test_stdout_q2.py
+PYTHONPATH=src python3 -m streams.test_stdout_q2
 ```
 
-📌 Isso imprime bytes no terminal (não será legível).
+ Vai aparecer texto "estranho" porque são bytes binários.
 
 ---
 
-### 2) Teste enviando para arquivo binário
+###  Teste 2: arquivo binário (gera `animais.bin`)
 
 ```bash
-python3 streams/test_file_q2.py
+PYTHONPATH=src python3 -m streams.test_file_q2
 ```
 
-Isso gera o arquivo:
-
-```
-animais.bin
-```
+ Gera o arquivo:
+- `animais.bin`
 
 ---
 
-### 3) Teste enviando para servidor remoto TCP
+###  Teste 3: TCP (cliente envia bytes para servidor)
 
-#### Terminal 1 (servidor TCP recebendo bytes)
-
-```bash
-python3 streams/server_q2_tcp.py
-```
-
-#### Terminal 2 (cliente enviando bytes)
+#### Terminal 1 (Servidor TCP)
 
 ```bash
-python3 streams/client_q2_tcp.py
+PYTHONPATH=src python3 -m streams.server_q2_tcp
 ```
 
-Isso gera o arquivo:
+#### Terminal 2 (Cliente TCP)
 
+```bash
+PYTHONPATH=src python3 -m streams.client_q2_tcp
 ```
-animais_tcp.bin
-```
+
+ Resultado:
+- servidor recebe bytes e salva `animais_tcp.bin`
 
 ---
 
-# ✅ QUESTÃO 3 — InputStream (Leitura dos bytes gerados)
+#  Questão 3 — InputStream (Leitura e reconstrução)
 
-## 🎯 Objetivo
+##  Objetivo
+Criar um stream de entrada chamado:
 
-Criar uma subclasse de InputStream chamada:
+ `AnimalInputStream`
 
-* `AnimalInputStream`
-
-Ela é capaz de ler os dados binários enviados pelo `AnimalOutputStream`
-e reconstruir os objetos corretamente.
+Ele lê os bytes gerados na Questão 2 e reconstrói os objetos.
 
 ---
 
-## 🧪 Testes da Questão 3
+##  Rodar Questão 3
 
-### 1) Ler do arquivo criado na Questão 2
+###  Teste 1: Ler arquivo `animais.bin`
 
-Primeiro gere o arquivo:
-
-```bash
-python3 streams/test_file_q2.py
-```
-
-Depois leia:
+ Primeiro gere o arquivo (Questão 2):
 
 ```bash
-python3 streams/test_file_q3.py
+PYTHONPATH=src python3 -m streams.test_file_q2
 ```
 
-Você verá algo como:
+ Depois leia:
 
-```
-Cachorro Rex 5
-Gato Mimi 3
-Coelho Pipoca 2
+```bash
+PYTHONPATH=src python3 -m streams.test_file_q3
 ```
 
 ---
 
-### 2) Ler via TCP
-
-#### Terminal 1 (Servidor lendo com AnimalInputStream)
+###  Teste 2: Ler via stdin (entrada padrão)
 
 ```bash
-python3 streams/server_q3_tcp.py
-```
-
-#### Terminal 2 (Cliente enviando usando AnimalOutputStream)
-
-```bash
-python3 streams/client_q3_tcp.py
-```
-
-O servidor exibirá os animais recebidos via TCP.
-
----
-
-### 3) Ler via stdin (entrada padrão)
-
-📌 Esse teste pode ser feito redirecionando arquivo:
-
-```bash
-python3 streams/test_stdin_q3.py < animais.bin
+PYTHONPATH=src python3 -m streams.test_stdin_q3 < animais.bin
 ```
 
 ---
 
-# ✅ QUESTÃO 4 — Serialização Cliente-Servidor (TCP)
+###  Teste 3: Ler via TCP
 
-## 🎯 Objetivo
+#### Terminal 1 (Servidor)
 
-Criar um serviço remoto cliente-servidor utilizando sockets TCP, com:
+```bash
+PYTHONPATH=src python3 -m streams.server_q3_tcp
+```
 
-* request empacotado no cliente
-* reply empacotado no servidor
-* desempacotamento dos dois lados
+#### Terminal 2 (Cliente)
 
-Para isso foi implementado um protocolo simples em JSON usando:
+```bash
+PYTHONPATH=src python3 -m streams.client_q3_tcp
+```
 
-📌 `utils/serializer.py`
-
-Esse módulo implementa:
-
-* `send_json(sock, obj)` → envia JSON com tamanho fixo (4 bytes + mensagem)
-* `recv_json(sock)` → recebe JSON baseado no tamanho
+ O servidor imprime os animais reconstruídos.
 
 ---
 
-## 🧪 Como rodar Questão 4
+#  Questão 4 — Serialização Cliente-Servidor (TCP + JSON)
+
+##  Objetivo
+Criar um serviço remoto cliente-servidor via TCP.
+
+ A comunicação usa JSON e é serializada como:
+
+- 4 bytes (tamanho da mensagem)
+- mensagem JSON em bytes
+
+Isso é implementado no arquivo:
+
+ `utils/serializer.py`
+
+Funções principais:
+- `send_json()` → empacota e envia JSON
+- `recv_json()` → recebe e desempacota JSON
+
+---
+
+##  Rodar Questão 4
 
 ### Terminal 1 (Servidor)
 
 ```bash
-python3 questao4/server_tcp.py
+PYTHONPATH=src python3 -m questao4.server_tcp
 ```
 
 ### Terminal 2 (Cliente)
 
 ```bash
-python3 questao4/client_tcp.py
+PYTHONPATH=src python3 -m questao4.client_tcp
 ```
 
-O cliente faz duas requisições:
-
-* listar animais
-* buscar animal pelo nome
-
----
-
-# ✅ QUESTÃO 5 — TCP + Multicast UDP + Multi-thread (Clínica Veterinária)
-
-## 🎯 Objetivo
-
-Implementar uma aplicação distribuída que suporta:
-
-* login de usuário (TCP)
-* envio de lista de candidatos (TCP)
-* envio de voto (TCP)
-* envio de notas informativas via multicast UDP
-* servidor multi-thread
+ O cliente faz requisições como:
+- listar animais
+- buscar animal por nome
 
 ---
 
-## 🐾 Adaptação ao Tema Clínica Veterinária
+#  Questão 5 — Sistema Distribuído Completo (TCP + Multicast UDP)
 
-No enunciado original o sistema é de votação.
+##  Objetivo
+Implementar um sistema distribuído completo, contendo:
 
-Neste projeto, a votação foi adaptada para:
-
-### 📌 Sistema de Prioridade de Atendimento
-
-Os "candidatos" agora são animais na fila de consulta.
-
-* Eleitores = funcionários/recepção
-* Admin = veterinário responsável
-* Voto = animal que deve ter prioridade no atendimento
-
-📌 Multicast é usado exclusivamente para enviar avisos administrativos.
-
-Exemplos de aviso multicast:
-
-* "Vacinas chegaram no estoque"
-* "Clínica fecha às 17h"
-* "Emergência chegando"
+Login via TCP 
+Lista de candidatos via TCP 
+Envio de voto via TCP 
+Notas informativas via UDP Multicast 
+Servidor multi-thread 
 
 ---
 
-## 🔐 Usuários do sistema
+#  Adaptação ao Tema Clínica Veterinária
+
+No enunciado, existe votação de candidatos.
+
+Aqui, isso foi adaptado para:
+
+##  Sistema de Prioridade de Atendimento
+
+ "Candidatos" = animais na fila de consulta 
+ "Eleitor" = recepção/funcionário 
+ "Admin" = administrador/veterinário 
+ "Voto" = escolher qual animal deve ser atendido primeiro 
+
+O servidor calcula:
+- total de votos
+- percentual de cada animal
+- animal com maior prioridade
+
+---
+
+#  Multicast UDP (Avisos)
+
+ O admin pode enviar avisos para todos os funcionários conectados.
+
+Exemplos:
+- "Vacinas chegaram no estoque"
+- "Clínica fecha às 17h"
+- "Emergência chegando"
+
+Multicast:
+- Grupo: `224.1.1.1`
+- Porta: `5007`
+
+---
+
+#  Usuários cadastrados
 
 ### Eleitores (funcionários)
 
-| Usuário     | Senha |
-| ----------- | ----- |
-| recepcao    | 123   |
-| funcionario | 123   |
+| Usuário | Senha |
+|--------|------|
+| recepcao | 123 |
+| funcionario | 123 |
 
 ### Admin
 
-| Usuário | Senha    |
-| ------- | -------- |
-| admin   | admin123 |
+| Usuário | Senha |
+|--------|------|
+| admin | admin123 |
 
 ---
 
-# 🧪 Como Rodar Questão 5
+#  Rodar Questão 5 (modo completo)
 
-⚠️ Para testar corretamente, use **3 ou 4 terminais**.
+ Para testar corretamente, use **4 terminais**.
 
 ---
 
-## Terminal 1 — Servidor TCP (multi-thread)
+## Terminal 1 — Servidor TCP multi-thread
 
 ```bash
-python3 questao5/server.py
+PYTHONPATH=src python3 -m questao5.server
 ```
-
-Esse servidor:
-
-* aceita múltiplos clientes simultaneamente
-* controla tempo de votação (60 segundos)
-* calcula resultado e prioridade
 
 ---
 
 ## Terminal 2 — Listener Multicast (recebe avisos)
 
 ```bash
-python3 questao5/multicast_listener.py
+PYTHONPATH=src python3 -m questao5.multicast_listener
 ```
-
-Esse programa simula funcionários escutando mensagens multicast.
 
 ---
 
-## Terminal 3 — Cliente Admin
+## Terminal 3 — Admin (gerencia fila e envia avisos)
 
 ```bash
-python3 questao5/client_admin.py
+PYTHONPATH=src python3 -m questao5.client_admin
 ```
 
-O admin pode:
-
-* adicionar animais na fila
-* remover animais
-* enviar aviso multicast
-* visualizar resultado da votação
+Login:
+- admin / admin123
 
 ---
 
-## Terminal 4 — Cliente Eleitor
+## Terminal 4 — Eleitor (funcionário votando)
 
 ```bash
-python3 questao5/client_eleitor.py
+PYTHONPATH=src python3 -m questao5.client_eleitor
 ```
 
-O eleitor pode:
-
-* fazer login
-* listar fila de consultas
-* votar em um animal para ter prioridade
-* visualizar resultado parcial
+Login:
+- recepcao / 123
 
 ---
 
-# 📌 Funcionamento do Multicast
+#  Fluxo Geral do Projeto (Resumo Visual)
 
-O multicast é enviado no grupo:
+##  Questão 2 e 3 (Streams)
+ Objetos Animal → bytes → arquivo/TCP → bytes → objetos Animal
 
-* IP: `224.1.1.1`
-* Porta: `5007`
-
-📌 Apenas o admin envia mensagens UDP multicast.
-📌 Todos que estiverem rodando `multicast_listener.py` recebem.
-
----
-
-# 🧠 Observações Importantes
-
-## Sobre o tempo limite da votação
-
-O servidor permite votação por **60 segundos** após iniciar.
-
-Depois disso:
-
-* votos não são mais aceitos
-* resultado pode ser consultado normalmente
-
----
-
-## Sobre multi-thread
-
-O servidor Questão 5 usa `threading.Thread`, permitindo múltiplos clientes simultâneos.
-
----
-
-# 📌 Resumo de Execução por Questão
-
-## Questão 2
-
-```bash
-python3 streams/test_stdout_q2.py
-python3 streams/test_file_q2.py
-python3 streams/server_q2_tcp.py
-python3 streams/client_q2_tcp.py
 ```
-
-## Questão 3
-
-```bash
-python3 streams/test_file_q3.py
-python3 streams/server_q3_tcp.py
-python3 streams/client_q3_tcp.py
-python3 streams/test_stdin_q3.py < animais.bin
-```
-
-## Questão 4
-
-```bash
-python3 questao4/server_tcp.py
-python3 questao4/client_tcp.py
-```
-
-## Questão 5
-
-```bash
-python3 questao5/server.py
-python3 questao5/multicast_listener.py
-python3 questao5/client_admin.py
-python3 questao5/client_eleitor.py
+AnimalOutputStream  --->  arquivo/TCP  --->  AnimalInputStream
 ```
 
 ---
 
-# 📌 Conclusão
+##  Questão 4 (TCP JSON)
+ Cliente envia JSON e servidor responde JSON
 
-Este projeto implementa todas as etapas solicitadas no Trabalho 1,
-aplicando conceitos de:
+```
+Cliente TCP ---> Request JSON ---> Servidor TCP
+Cliente TCP <--- Reply JSON  <--- Servidor TCP
+```
 
-* Sockets TCP (unicast)
-* Sockets UDP multicast
-* Streams binários (InputStream/OutputStream)
-* Serialização manual de mensagens
-* Multi-threading em servidor
+---
 
+##  Questão 5 (TCP + Multicast UDP)
+ Login e voto via TCP, avisos via multicast
+
+```
+Eleitor (TCP)  ---> login/voto ---> Servidor
+Admin (TCP)    ---> gerencia    ---> Servidor
+Admin (UDP)    ---> aviso multicast ---> Todos os ouvintes
+```
+
+---
+
+#  Conclusão
+
+Este projeto atende completamente ao enunciado do Trabalho 1, aplicando:
+
+ Streams binários customizados 
+ Comunicação TCP com serialização JSON 
+ Comunicação UDP Multicast para mensagens em grupo 
+ Servidor multi-thread para múltiplos clientes 
+ Aplicação baseada no tema Clínica Veterinária 
