@@ -1,6 +1,6 @@
 # Pacote de entidades do servidor
-from .pessoa import Pessoa
-from .usuario import Usuario
-from .funcionario import Funcionario
-from .livro import Livro
-from .emprestimo import Emprestimo
+from server.entities.pessoa import Pessoa
+from server.entities.usuario import Usuario
+from server.entities.funcionario import Funcionario
+from server.entities.livro import Livro
+from server.entities.emprestimo import Emprestimo

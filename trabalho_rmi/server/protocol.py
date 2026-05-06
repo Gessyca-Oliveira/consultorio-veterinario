@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from shared.models import Request, Response
 from shared.serializer import deserialize_request, serialize_response
 

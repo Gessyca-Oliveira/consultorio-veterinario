@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import Pyro5.api
 from server.entities.usuario import Usuario
 from server.entities.livro import Livro
@@ -45,8 +49,17 @@ class BibliotecaService:
 
     def realizar_emprestimo(self, usuario_ref, livro_data):
         """Realiza empréstimo (usuário por referência, livro por valor)"""
-        # Passagem por referência: obtém dados do usuário remoto
-        usuario = Usuario.from_dict(usuario_ref.to_dict())
+        import Pyro5.api
+        # Se receber uma URI (string), cria um proxy para passagem por referência
+        if isinstance(usuario_ref, str):
+            usuario_proxy = Pyro5.api.Proxy(usuario_ref)
+        else:
+            usuario_proxy = usuario_ref
+        
+        # Passagem por referência: obtém dados do usuário remoto via proxy
+        usuario_data = usuario_proxy.to_dict()
+        usuario = Usuario.from_dict(usuario_data)
+        
         # Passagem por valor: reconstrói livro localmente
         livro = Livro.from_dict(livro_data)
         
@@ -76,7 +89,6 @@ class RequestHandler:
     def __init__(self, service: BibliotecaService):
         self.service = service
 
-    @Pyro5.api.method
     def process_request(self, request_json: str) -> str:
         """Método remoto único que processa todas as requisições"""
         # Simula getRequest(): deserializa a requisição

@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import threading
 import Pyro5.api
 from client.protocol import do_operation
@@ -5,9 +9,20 @@ from server.entities.usuario import Usuario
 from server.entities.livro import Livro
 
 def main():
-    # Conecta ao serviço remoto via Name Server
-    ns = Pyro5.api.locate_ns()
-    request_handler = Pyro5.api.Proxy(ns.lookup("bib.requesthandler"))
+    import os
+    # Tenta conectar via Name Server, se falhar usa URI do arquivo
+    try:
+        ns = Pyro5.api.locate_ns()
+        uri = ns.lookup("bib.requesthandler")
+        print(f"Conectado via Name Server: {uri}")
+    except Exception as e:
+        print(f"Name Server não disponível, lendo URI do arquivo...")
+        uri_path = os.path.join(os.path.dirname(__file__), "..", "server", "server_uri.txt")
+        with open(os.path.abspath(uri_path), "r") as f:
+            uri = f.read().strip()
+        print(f"URI direta: {uri}")
+    
+    request_handler = Pyro5.api.Proxy(uri)
     request_handler._pyroTimeout = 5
 
     print("=== Cliente do Sistema de Biblioteca (RMI) ===")

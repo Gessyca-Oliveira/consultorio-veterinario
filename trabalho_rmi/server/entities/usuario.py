@@ -1,5 +1,7 @@
-from .pessoa import Pessoa
+import Pyro5.api
+from server.entities.pessoa import Pessoa
 
+@Pyro5.api.expose
 class Usuario(Pessoa):  # Herança: Usuario É-UM Pessoa
     """Entidade de usuário da biblioteca"""
     def __init__(self, id: int, nome: str, cpf: str, matricula: str, telefone: str):

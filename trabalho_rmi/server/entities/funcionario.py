@@ -1,4 +1,4 @@
-from .pessoa import Pessoa
+from server.entities.pessoa import Pessoa
 
 class Funcionario(Pessoa):  # Herança: Funcionario É-UM Pessoa
     """Entidade de funcionário da biblioteca"""
